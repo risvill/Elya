@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <form id="orderForm">
+      <input name="clientName" placeholder="Имя клиента" required>
+
+      <div id="orderItems">
+        <div class="item-row">
+          <select name="product" required>
+            <option value="">— Товар —</option>
+            <option value="Самса">Самса</option>
+            <option value="Пирожное">Пирожное</option>
+            <!-- и т.д. -->
+          </select>
+          <input name="quantity" type="number" placeholder="Кол-во" required>
+        </div>
+      </div>
+
+      <button type="button" id="addOrderItem">Добавить позицию</button>
+      <button type="submit">Сохранить заказ</button>
+    </form>
+  <div id="msgOrder"></div>
+  </body>
+  <script>
+    // Кнопка «Добавить позицию»
+document.getElementById('addOrderItem').addEventListener('click', () => {
+  const tpl = document.querySelector('#orderItems .item-row');
+  const clone = tpl.cloneNode(true);
+  clone.querySelector('select').value = '';
+  clone.querySelector('input').value = '';
+  document.getElementById('orderItems').appendChild(clone);
+});
+
+// Отправка формы
+document.getElementById('orderForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const form = e.target;
+  const data = {
+    clientName: form.clientName.value,
+    items: Array.from(form.querySelectorAll('.item-row')).map(row => ({
+      product:  row.querySelector('select').value,
+      quantity: +row.querySelector('input[name="quantity"]').value
+    }))
+  };
+  const msg = document.getElementById('msgOrder');
+  msg.textContent = 'Сохраняется…';
+  google.script.run.withSuccessHandler(res => {
+    if (res === 'OK') {
+      msg.textContent = '✅ Заказ добавлен в очередь';
+      form.reset();
+      // Оставляем только одну строку
+      document.getElementById('orderItems').innerHTML = `
+        <div class="item-row">
+          <select name="product" required>
+            <option value="">— Товар —</option>
+            <option value="Самса">Самса</option>
+            <option value="Пирожное">Пирожное</option>
+            <!-- … -->
+          </select>
+          <input name="quantity" type="number" placeholder="Кол-во" required>
+        </div>`;
+    } else {
+      msg.textContent = '❌ ' + res;
+    }
+  }).saveNewOrder(data);
+});
+  </script>
+</html>
